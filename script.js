@@ -121,12 +121,12 @@ function addItemRow(desc, qty, cost, price, stockId = null) {
   tr.id = rowId;
   tr.dataset.stockId = stockId || '';
   tr.innerHTML = `
-    <td><input type="text" class="item-desc" placeholder="Ej: Cambio de pantalla" value="${desc ? escapeAttr(desc) : ''}" oninput="recalcTotal()"></td>
-    <td><input type="number" class="item-qty" min="1" value="${qty || 1}" oninput="recalcTotal()"></td>
-    <td><input type="number" class="item-cost" min="0" placeholder="0" value="${cost != null ? cost : ''}" oninput="recalcTotal()"></td>
-    <td><input type="number" class="item-price" min="0" placeholder="0" value="${price != null ? price : ''}" oninput="recalcTotal()"></td>
-    <td class="item-subtotal">$0</td>
-    <td class="item-profit" style="color: var(--green-success); font-weight: bold;">$0</td>
+    <td data-label="Descripción"><input type="text" class="item-desc" placeholder="Ej: Cambio de pantalla" value="${desc ? escapeAttr(desc) : ''}" oninput="recalcTotal()"></td>
+    <td data-label="Cant."><input type="number" class="item-qty" min="1" value="${qty || 1}" oninput="recalcTotal()"></td>
+    <td data-label="Costo ($)"><input type="number" class="item-cost" min="0" placeholder="0" value="${cost != null ? cost : ''}" oninput="recalcTotal()"></td>
+    <td data-label="Precio unit."><input type="number" class="item-price" min="0" placeholder="0" value="${price != null ? price : ''}" oninput="recalcTotal()"></td>
+    <td class="item-subtotal" data-label="Subtotal">$0</td>
+    <td class="item-profit" data-label="Ganancia" style="color: var(--green-success); font-weight: bold;">$0</td>
     <td><button class="btn-danger" onclick="document.getElementById('${rowId}').remove(); recalcTotal();">✕</button></td>
   `;
   document.getElementById('itemsBody').appendChild(tr);

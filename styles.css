@@ -1,4 +1,4 @@
-  :root {
+:root {
     --bg-main: #0a0d14;
     --bg-card: #121824;
     --bg-hover: #1a2336;
@@ -247,3 +247,30 @@
     .no-print { display: none !important; }
     @page { size: 80mm auto; margin: 0; }
   }
+
+/* ===== Tabla de ítems del presupuesto: tarjetas en celular ===== */
+@media (max-width: 768px) {
+  .items-table, .items-table tbody, .items-table td { display: block; width: 100%; }
+  .items-table thead { display: none; }
+  .items-table tr {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+  }
+  .items-table td { padding: 0; border: none; min-width: 0; }
+  .items-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .items-table td:nth-child(1) { grid-column: 1 / -1; }   /* Descripción ocupa todo el ancho */
+  .items-table td:last-child { align-self: end; justify-self: end; width: auto; }
+  .items-table td:last-child::before { display: none; }   /* el botón ✕ no lleva etiqueta */
+}
