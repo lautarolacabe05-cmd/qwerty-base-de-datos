@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QWERTY & CeluFix - Sistema Integral Pro</title>
+<!-- Fuentes e Iconos -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="brand-logo">
+    <i class="fa-solid fa-microchip fa-2x" style="color: var(--accent-blue);"></i>
+    <div class="brand-title">QWERTY <span>/ CeluFix</span></div>
+  </div>
+  <nav class="main-nav">
+    <button class="nav-tab active" onclick="switchMainTab('presupuestos', this)"><i class="fa-solid fa-file-invoice-dollar"></i> Presupuestos</button>
+    <button class="nav-tab" onclick="switchMainTab('ventas', this)"><i class="fa-solid fa-cash-register"></i> Ventas Directas</button>
+    <button class="nav-tab" onclick="switchMainTab('clientes', this)"><i class="fa-solid fa-users"></i> Clientes</button>
+    <button class="nav-tab" onclick="switchMainTab('stock', this)"><i class="fa-solid fa-boxes-stacked"></i> Stock</button>
+    <button class="nav-tab" onclick="switchMainTab('caja', this)"><i class="fa-solid fa-wallet"></i> Caja Diaria</button>
+    <button class="nav-tab" onclick="switchMainTab('finanzas', this)"><i class="fa-solid fa-chart-line"></i> Financiero</button>
+    <button class="nav-tab" onclick="switchMainTab('compatibilidades', this)"><i class="fa-solid fa-mobile-screen-button"></i> Compatibilidades</button>
+    <button class="nav-tab" onclick="exportarDatos()" title="Descargar copia de todos los datos"><i class="fa-solid fa-download"></i> Exportar datos</button>
+    <button class="nav-tab" onclick="document.getElementById('importFile').click()" title="Cargar datos desde un archivo .json"><i class="fa-solid fa-upload"></i> Importar datos</button>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importarDatos(this)">
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- SECCIÓN 1: PRESUPUESTOS Y ORDENES -->
+  <div id="tab-presupuestos" class="tab-content active">
+    <div class="card">
+      <h2>Nuevo presupuesto <span id="quoteNumberLabel" style="font-weight:400; color:var(--text-muted); font-size:13px;"></span></h2>
+      <div class="grid3">
+        <div class="field"><label>Cliente</label><input type="text" id="clientName" placeholder="Nombre del cliente"></div>
+        <div class="field"><label>Teléfono (opcional)</label><input type="text" id="clientPhone" placeholder="Ej: 11 1234-5678"></div>
+        <div class="field"><label>Fecha</label><input type="date" id="quoteDate"></div>
+      </div>
+      <div class="grid4">
+        <div class="field">
+          <label>Tipo de equipo</label>
+          <select id="deviceType">
+            <option value="Celular">Celular</option>
+            <option value="Impresora">Impresora</option>
+            <option value="TV">TV</option>
+            <option value="Tablet">Tablet</option>
+            <option value="PC">PC</option>
+            <option value="Netbook">Netbook</option>
+            <option value="Notebook">Notebook</option>
+          </select>
+        </div>
+        <div class="field"><label>Marca / Modelo</label><input type="text" id="deviceModel" placeholder="Ej: Samsung A54"></div>
+        <div class="field"><label>Validez (días)</label><input type="number" id="validityDays" value="7" min="1"></div>
+        <div class="field">
+          <label>Estado</label>
+          <select id="quoteStatus">
+            <option value="pending">Pendiente / No entregado</option>
+            <option value="done">Terminado / Entregado</option>
+            <option value="failed">No realizado</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Estado en que llegó el equipo</label><textarea id="arrivalCondition" placeholder="Ej: Llegó con pantalla astillada"></textarea></div>
+      <div class="field"><label>Falla / diagnóstico</label><textarea id="issueDesc" placeholder="Ej: No enciende"></textarea></div>
+
+      <h2>Acceso al equipo</h2>
+      <div class="notice">⚠️ Dato sensible: se guarda solo en este navegador.</div>
+      <div class="type-tabs">
+        <div class="type-tab" data-type="none" onclick="setAccessType('none')">Ninguno</div>
+        <div class="type-tab active" data-type="pattern" onclick="setAccessType('pattern')">Patrón</div>
+        <div class="type-tab" data-type="pin" onclick="setAccessType('pin')">PIN</div>
+        <div class="type-tab" data-type="password" onclick="setAccessType('password')">Contraseña</div>
+      </div>
+      <div id="patternSection">
+        <div class="pattern-wrap"><div class="pattern-grid" id="patternGrid"><svg class="pattern-svg" id="patternSvg" width="180" height="180"></svg></div></div>
+        <div style="text-align:center;"><button class="btn-ghost" type="button" onclick="clearPattern()">Borrar patrón</button></div>
+      </div>
+      <div id="pinSection" style="display:none;">
+        <div class="field" style="max-width:200px; margin: 0 auto;"><label>PIN</label><input type="text" id="accessPin" placeholder="Ej: 4821"></div>
+      </div>
+      <div id="passwordSection" style="display:none;">
+        <div class="field" style="max-width:280px; margin: 0 auto;"><label>Contraseña</label><input type="text" id="accessPassword" placeholder="Contraseña"></div>
+      </div>
+
+      <h2 style="margin-top:18px;">Ítems del presupuesto</h2>
+      
+      <div class="stock-search-wrap">
+        <label>Agregar repuesto o producto desde Stock (opcional)</label>
+        <input type="text" id="searchQuoteStock" placeholder="Buscar producto en stock por nombre..." oninput="searchStockForQuote(this.value)">
+        <div class="stock-search-results" id="quoteStockResults"></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:30%;">Descripción</th>
+            <th style="width:10%;">Cant.</th>
+            <th style="width:15%;">Costo ($)</th>
+            <th style="width:15%;">Precio unit.</th>
+            <th style="width:15%;">Subtotal</th>
+            <th style="width:15%;">Ganancia</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="itemsBody"></tbody>
+      </table>
+      <button class="btn-ghost" onclick="addItemRow()" style="margin-top:8px;">+ Agregar ítem manual</button>
+
+      <!-- RESUMEN CON ENVÍO Y GANANCIA TOTAL -->
+      <div class="payment-summary">
+        <div class="payment-row">
+          <label for="shippingCost">Costo de Envío / Retiro (+):</label>
+          <input type="number" id="shippingCost" placeholder="0" min="0" oninput="recalcTotal()">
+        </div>
+        <div class="payment-row">
+          <label for="shippingExpense">Gasto Real de Envío (-):</label>
+          <input type="number" id="shippingExpense" placeholder="0" min="0" oninput="recalcTotal()">
+        </div>
+        <div class="total-row">
+          <span>Subtotal Repuestos/Mano de obra:</span>
+          <span style="font-weight: bold; font-size: 16px;" id="itemsSubtotalAmount">$0</span>
+        </div>
+        <div class="total-row">
+          <span>Total Presupuesto:</span>
+          <span class="amount" id="totalAmount">$0</span>
+        </div>
+        <div class="total-row">
+          <span>Ganancia Total Estimada:</span>
+          <span class="profit-amount" id="totalProfitAmount">$0</span>
+        </div>
+        <div class="payment-row" style="margin-top: 10px;">
+          <label for="paymentMethod">Medio de Pago:</label>
+          <select id="paymentMethod">
+            <option value="Efectivo">Efectivo</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Tarjeta">Tarjeta</option>
+            <option value="Mercado Pago">Mercado Pago</option>
+          </select>
+        </div>
+        <div class="payment-row">
+          <label for="paidAmount">Seña / Adelanto:</label>
+          <input type="number" id="paidAmount" placeholder="0" min="0" oninput="recalcTotal()">
+        </div>
+        <div class="payment-row">
+          <label>Cambio (Vuelto):</label>
+          <span class="change-amount" id="changeAmount">$0</span>
+        </div>
+      </div>
+
+      <div class="btn-row no-print">
+        <button class="btn-primary" onclick="saveQuote()"><i class="fa-solid fa-floppy-disk"></i> Guardar Presupuesto</button>
+        <button class="btn-secondary" onclick="printQuote()"><i class="fa-solid fa-receipt"></i> Imprimir Ticket Térmico (80mm)</button>
+        <button class="btn-primary" onclick="printProfessionalQuote()"><i class="fa-solid fa-file-pdf"></i> Boleta profesional / PDF (A4)</button>
+        <button class="btn-ghost" onclick="newQuote()">Nuevo (limpiar)</button>
+      </div>
+      <div class="status" id="quoteStatusMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Historial de presupuestos</h2>
+      <div class="toolbar">
+        <input type="text" id="searchHistory" placeholder="Buscar..." oninput="renderHistory()">
+        <select id="filterDevice" onchange="renderHistory()">
+          <option value="">Todos los equipos</option>
+          <option value="Celular">Celular</option>
+          <option value="Impresora">Impresora</option>
+          <option value="TV">TV</option>
+          <option value="Tablet">Tablet</option>
+          <option value="PC">PC</option>
+          <option value="Netbook">Netbook</option>
+          <option value="Notebook">Notebook</option>
+        </select>
+        <select id="filterStatus" onchange="renderHistory()">
+          <option value="">Todos los estados</option>
+          <option value="pending">Pendiente / No entregado</option>
+          <option value="done">Terminado / Entregado</option>
+          <option value="failed">No realizado</option>
+        </select>
+      </div>
+      <div id="historyList"></div>
+      <div class="empty" id="historyEmpty" style="display:none;">Todavía no guardaste ningún presupuesto.</div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: VENTAS DIRECTAS DE STOCK (POS) -->
+  <div id="tab-ventas" class="tab-content">
+    <div class="card">
+      <h2>Punto de Venta Directa (Accesorios y Productos)</h2>
+      <div class="stock-search-wrap">
+        <label>Buscar producto para vender</label>
+        <input type="text" id="searchPOS" placeholder="Escriba el nombre del producto..." oninput="searchPOSProducts(this.value)">
+        <div class="stock-search-results" id="posSearchResults"></div>
+      </div>
+
+      <h3 style="margin: 15px 0 10px 0; color: var(--accent-blue); font-size: 1rem;">Carrito de Venta</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th style="width: 90px;">Cantidad</th>
+            <th style="width: 110px;">Costo Unit.</th>
+            <th style="width: 110px;">Precio Unit.</th>
+            <th style="width: 110px;">Subtotal</th>
+            <th style="width: 110px;">Ganancia</th>
+            <th style="width: 40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="posCartBody"></tbody>
+      </table>
+
+      <div class="payment-summary">
+        <div class="total-row">
+          <span>Total Venta:</span>
+          <span class="amount" id="posTotalAmount">$0</span>
+        </div>
+        <div class="total-row">
+          <span>Ganancia Estimada:</span>
+          <span class="profit-amount" id="posTotalProfitAmount">$0</span>
+        </div>
+        <div class="payment-row" style="margin-top: 10px;">
+          <label>Forma de Pago:</label>
+          <select id="posPaymentMethod">
+            <option value="Efectivo">Efectivo</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Tarjeta">Tarjeta</option>
+            <option value="Mercado Pago">Mercado Pago</option>
+          </select>
+        </div>
+        <div class="payment-row">
+          <label>Monto Abonado:</label>
+          <input type="number" id="posPaidAmount" placeholder="0" min="0" oninput="recalcPOSTotal()">
+        </div>
+        <div class="payment-row">
+          <label>Vuelto:</label>
+          <span class="change-amount" id="posChangeAmount">$0</span>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" onclick="confirmPOSSale()"><i class="fa-solid fa-cart-shopping"></i> Finalizar Venta y Descontar Stock</button>
+        <button class="btn-ghost" onclick="clearPOSCart()">Vaciar Carrito</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Historial de Ventas Directas</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID / Fecha</th>
+            <th>Productos</th>
+            <th>Método Pago</th>
+            <th>Total</th>
+            <th>Ganancia</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="posHistoryBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: CLIENTES Y TAREAS -->
+  <div id="tab-clientes" class="tab-content">
+    <div class="card">
+      <h2>Historial y Arreglos por Cliente</h2>
+      <div class="toolbar">
+        <input type="text" id="searchClients" placeholder="Buscar por cliente o teléfono..." oninput="renderClients()">
+      </div>
+      <div id="clientsList"></div>
+      <div class="empty" id="clientsEmpty" style="display:none;">No se encontraron registros de clientes.</div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: CONTROL DE STOCK -->
+  <div id="tab-stock" class="tab-content">
+    <div class="summary" id="stockSummary"></div>
+
+    <div class="card">
+      <h2>Cargar Producto</h2>
+      <div class="grid3">
+        <div><label>Producto</label><input type="text" id="inputStockName" placeholder="Ej: Funda iPhone 13"></div>
+        <div>
+          <label>Categoría</label>
+          <select id="inputStockCategory" onchange="toggleDescription()">
+            <option value="Fundas">Fundas</option>
+            <option value="Vidrios templados">Vidrios templados</option>
+            <option value="Cargadores">Cargadores</option>
+            <option value="Cables USB">Cables USB</option>
+            <option value="Repuestos">Repuestos</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+        <div><label>Precio Venta ($)</label><input type="number" id="inputStockPrice" placeholder="Precio venta público"></div>
+      </div>
+      <div class="grid3" style="margin-top:10px;">
+        <div><label>Costo Adquisición ($)</label><input type="number" id="inputStockCost" placeholder="Precio costo (para finanzas)"></div>
+        <div><label>Cantidad (local)</label><input type="number" id="inputStockQty" value="1" min="0"></div>
+        <div><label>Cantidad (depósito)</label><input type="number" id="inputStockDeposit" value="0" min="0"></div>
+      </div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn-primary" style="width:100%;" onclick="addStockItem()">+ Agregar Al Stock</button>
+      </div>
+      <div id="descriptionRow" style="margin-top:10px; display:none;">
+        <label>Descripción / Detalles opcionales</label>
+        <input type="text" id="inputStockDescription" placeholder="Ej: Detalle en la carcasa...">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <input type="text" id="searchStock" placeholder="Buscar producto..." oninput="renderStock()">
+        <select id="filterStockCat" onchange="renderStock()">
+          <option value="">Todas las categorías</option>
+          <option value="Fundas">Fundas</option>
+          <option value="Vidrios templados">Vidrios templados</option>
+          <option value="Cargadores">Cargadores</option>
+          <option value="Cables USB">Cables USB</option>
+          <option value="Repuestos">Repuestos</option>
+          <option value="Otros">Otros</option>
+        </select>
+        <button class="btn-ghost" onclick="exportCSV()">Exportar CSV</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>En local</th>
+            <th>En depósito</th>
+            <th>Costo / Precio</th>
+            <th>Ganancia Un.</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="stockTbody"></tbody>
+      </table>
+      <div class="empty" id="stockEmptyMsg" style="display:none;">No se encontraron productos en el inventario.</div>
+    </div>
+    <div class="status" id="stockStatus"></div>
+  </div>
+
+  <!-- SECCIÓN: CAJA DIARIA -->
+  <div id="tab-caja" class="tab-content">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <h2>Estado de Caja Diaria (<span id="cashDateLabel"></span>)</h2>
+        <span id="cashBoxBadge" class="box-status box-closed">Caja Cerrada</span>
+      </div>
+      
+      <div class="grid4" style="margin-top: 15px;">
+        <div class="stat-card">
+          <label>Monto Inicial</label>
+          <div class="stat-val" id="boxInitialAmount">$0</div>
+        </div>
+        <div class="stat-card">
+          <label>Ingresos Totales</label>
+          <div class="stat-val positive" id="boxTotalIncome">$0</div>
+        </div>
+        <div class="stat-card">
+          <label>Egresos Totales</label>
+          <div class="stat-val negative" id="boxTotalExpenses">$0</div>
+        </div>
+        <div class="stat-card">
+          <label>Saldo Estimado en Caja</label>
+          <div class="stat-val" id="boxCurrentBalance">$0</div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:20px;">
+        <button class="btn-primary" onclick="openCashModal('open')"><i class="fa-solid fa-lock-open"></i> Abrir Caja</button>
+        <button class="btn-danger" onclick="openCashModal('close')"><i class="fa-solid fa-lock"></i> Cerrar Caja</button>
+        <button class="btn-secondary" onclick="openCashMovementModal('income')"><i class="fa-solid fa-plus"></i> Ingreso Manual</button>
+        <button class="btn-secondary" onclick="openCashMovementModal('expense')"><i class="fa-solid fa-minus"></i> Egreso / Gasto</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Desglose por Medio de Pago (Turno Actual)</h2>
+      <div class="grid4" id="cashMethodsBreakdown"></div>
+    </div>
+
+    <div class="card">
+      <h2>Movimientos del Día</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <th>Concepto / Tipo</th>
+            <th>Medio de Pago</th>
+            <th>Monto</th>
+          </tr>
+        </thead>
+        <tbody id="cashMovementsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: MÓDULO FINANCIERO -->
+  <div id="tab-finanzas" class="tab-content">
+    <div class="card">
+      <h2>Resumen Financiero y Rendimiento</h2>
+      <div class="grid4">
+        <div class="stat-card">
+          <label>Facturación Total</label>
+          <div class="stat-val positive" id="finTotalRevenue">$0</div>
+        </div>
+        <div class="stat-card">
+          <label>Costo de Mercadería / Repuestos</label>
+          <div class="stat-val negative" id="finTotalCost">$0</div>
+        </div>
+        <div class="stat-card">
+          <label>Gastos Operativos / Envíos</label>
+          <div class="stat-val negative" id="finTotalExpenses">$0</div>
+        </div>
+        <div class="stat-card">
+          <label>Ganancia Neta Estimada</label>
+          <div class="stat-val positive" id="finNetProfit">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Distribución de Ingresos</h2>
+        <div id="financeIncomeBreakdown" style="padding: 10px 0;"></div>
+      </div>
+      <div class="card">
+        <h2>Rendimiento de Reparaciones vs Ventas</h2>
+        <div id="financeSourceBreakdown" style="padding: 10px 0;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: COMPATIBILIDADES -->
+  <div id="tab-compatibilidades" class="tab-content">
+    <div class="card">
+      <h2>Buscador Rápido de Compatibilidades</h2>
+      <div class="toolbar">
+        <input type="text" id="searchCompat" placeholder="Modelo (ej: Moto G30, A12, iPhone 11)..." onkeyup="filtrarCompat()">
+        <select id="filterCompatBrand" onchange="filtrarCompat()">
+          <option value="">Todas las Marcas</option>
+          <option value="Samsung">Samsung</option>
+          <option value="Motorola">Motorola</option>
+          <option value="Xiaomi">Xiaomi</option>
+          <option value="iPhone">iPhone</option>
+        </select>
+        <select id="filterCompatCat" onchange="filtrarCompat()">
+          <option value="">Todos los Tipos</option>
+          <option value="Vidrio Templado">Vidrio Templado</option>
+          <option value="Funda">Funda</option>
+          <option value="Hydrogel">Hydrogel</option>
+        </select>
+        <button class="btn-primary" onclick="abrirModalCompat()"><i class="fa-solid fa-plus"></i> Nuevo Registro</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Marca</th>
+            <th>Modelo Buscado</th>
+            <th>Tipo</th>
+            <th>Compatible con (Código / Vidrio)</th>
+            <th>Notas de Stock</th>
+            <th style="text-align: right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="compatTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal Motivo de Tarea No Realizada -->
+<div class="modal-overlay" id="modalRazon">
+  <div class="modal-box">
+    <h3 style="color: var(--accent-blue); margin-bottom: 12px; font-family: 'Orbitron', sans-serif; font-size: 1.1rem;">Motivo por el cual no se hizo</h3>
+    <textarea id="textoRazon" rows="4" placeholder="Escribe la razón aquí..."></textarea>
+    <div class="btn-row" style="justify-content: flex-end; margin-top: 15px;">
+      <button class="btn-ghost" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarRazon()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Movimiento o Apertura/Cierre Caja -->
+<div class="modal-overlay" id="modalCaja">
+  <div class="modal-content">
+    <div class="modal-header" id="modalCajaTitulo">Gestión de Caja</div>
+    <div class="field" id="fieldCajaMonto">
+      <label id="lblCajaMonto">Monto</label>
+      <input type="number" id="inputCajaMonto" placeholder="0">
+    </div>
+    <div class="field" id="fieldCajaMetodo">
+      <label>Medio de Pago</label>
+      <select id="selectCajaMetodo">
+        <option value="Efectivo">Efectivo</option>
+        <option value="Transferencia">Transferencia</option>
+        <option value="Tarjeta">Tarjeta</option>
+        <option value="Mercado Pago">Mercado Pago</option>
+      </select>
+    </div>
+    <div class="field" id="fieldCajaConcepto">
+      <label>Concepto / Detalle</label>
+      <input type="text" id="inputCajaConcepto" placeholder="Ej: Pago de limpieza o insumos">
+    </div>
+    <div class="btn-row" style="justify-content: flex-end;">
+      <button class="btn-ghost" onclick="closeCashModal()">Cancelar</button>
+      <button class="btn-primary" id="btnCajaConfirmar" onclick="confirmCashAction()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Vista Previa de Ticket Térmico -->
+<div class="modal-overlay" id="modalTicketPreview">
+  <div class="ticket-modal-content">
+    <div id="ticketPreviewContent"></div>
+    <div class="btn-row" style="justify-content: space-between; margin-top: 15px;">
+      <button class="btn-ghost" onclick="cerrarModalTicket()">Cerrar</button>
+      <button class="btn-primary" onclick="ejecutarImpresion()"><i class="fa-solid fa-print"></i> Imprimir Ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Compatibilidades -->
+<div class="modal-overlay" id="modalAgregarCompat">
+  <div class="modal-content">
+    <div class="modal-header">Nueva Compatibilidad</div>
+    <div class="field"><label>Marca</label>
+      <select id="newMarca">
+        <option value="Samsung">Samsung</option>
+        <option value="Motorola">Motorola</option>
+        <option value="Xiaomi">Xiaomi</option>
+        <option value="iPhone">iPhone</option>
+        <option value="Otra">Otra</option>
+      </select>
+    </div>
+    <div class="field"><label>Modelo del Cliente</label><input type="text" id="newModelo" placeholder="Ej: Moto G10 / G20 / G30"></div>
+    <div class="field"><label>Tipo de Accesorio</label>
+      <select id="newTipo">
+        <option value="Vidrio Templado">Vidrio Templado</option>
+        <option value="Funda">Funda</option>
+        <option value="Hydrogel">Hydrogel</option>
+      </select>
+    </div>
+    <div class="field"><label>Código o Modelo Compatible en Stock</label><input type="text" id="newCompatible" placeholder="Ej: Vidrio Templado A12/A02s/M12"></div>
+    <div class="field"><label>Ubicación / Notas</label><input type="text" id="newNotas" placeholder="Ej: Estante B3"></div>
+    <div class="btn-row" style="justify-content: flex-end;">
+      <button class="btn-ghost" onclick="cerrarModalCompat()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarNuevoCompat()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="printArea"></div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
